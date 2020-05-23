@@ -2,7 +2,7 @@ const router = require('express').Router()
 const User = require('../models/user')
 const auth = require('../middleware/auth')
 
-router.post('/users/friends', auth, async (req, res) => {
+router.get('/users/friends', auth, async (req, res) => {
     try{
         const user = req.user
         await user.populate('friends').execPopulate()
@@ -15,13 +15,25 @@ router.post('/users/friends', auth, async (req, res) => {
 router.post('/sendRequest', auth, async (req, res) => {
     try{
         const requestedUser = await User.findOne({ username: req.body.username })
+        req.user.reqSent.forEach((id) => {
+            if(requestedUser._id.equals(id))
+                throw new Error('Request already sent!')
+        })
+        req.user.reqReceived.forEach((id) => {
+            if(requestedUser._id.equals(id))
+                throw new Error('Check pending requests!')
+        })
+        req.user.friends.forEach((id) => {
+            if(requestedUser._id.equals(id))
+                throw new Error('You are already friends!')
+        })
         if(!requestedUser)
             return res.status(404).send('No user found')
         requestedUser.reqReceived.push(req.user._id)
         await requestedUser.save()
         req.user.reqSent.push(requestedUser._id)
         await req.user.save()
-        res.send('Request sent!')
+        res.send({message: 'Request sent!'})
     } catch (err){
         res.status(400).send({err: err.message})
     }
@@ -42,8 +54,9 @@ router.post('/acceptRequest', auth, async (req, res) => {
         })
         req.user.friends.push(acceptedUser._id)
         await req.user.save()
-        res.send('Request accepted!')
+        res.send({message: 'Request accepted!'})
     } catch (err){
+        console.log(err.message)
         res.status(400).send({err: err.message})
     }
 })
@@ -61,13 +74,13 @@ router.post('/rejectRequest', auth, async (req, res) => {
             return !(_id.equals(rejectedUser._id))
         })
         await req.user.save()
-        res.send('Request rejected!')
+        res.send({message: 'Request rejected!'})
     } catch (err){
         res.status(400).send({err: err.message})
     }
 })
 
-router.post('/users/pendingRequests', auth, async (req, res) => {
+router.get('/users/pendingRequests', auth, async (req, res) => {
     try{
         const user = req.user
         await user.populate('reqReceived').execPopulate()

@@ -18,7 +18,24 @@ router.post('/users/createUser', async (req, res) => {
 
 // Read user
 router.get('/users/me', auth, async (req, res) => {
-    res.send(req.user)
+    try{
+        res.send(req.user)
+    } catch(err){
+        res.status(400).send({err: err.message})
+    }
+})
+
+//Read other user(basic details only)
+router.post('/users/searchUser', auth, async (req, res) => {
+    try{
+        const user = await User.findOne({username: req.body.username})
+        if(!user)
+            throw new Error('No user found')
+        const responseUser = {username: user.username, name: user.name, _id: user._id}
+        res.send(responseUser)
+    } catch(err){
+        res.status(400).send({err: err.message})
+    }
 })
 
 // Update user
