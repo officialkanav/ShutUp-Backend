@@ -1,13 +1,21 @@
 const router = require('express').Router()
 const User = require('../models/user')
+const Chats = require('../models/chats')
 const auth = require('../middleware/auth')
 
 // Create user
 router.post('/users/createUser', async (req, res) => {
-    user = new User(req.body)
+    const user = new User(req.body)
+    const chats = new Chats({
+        username: req.body.username,
+        chats: {}
+    })
     try {
         await user.save()
+        await chats.save()
         const token = await user.generateAuthToken()
+        const onlineUsers = req.app.get('onlineUsers')
+        onlineUsers.addUser(req.body.username)
         res.send({user, token})
     } catch(err) {
         if(err.code === 11000)
@@ -16,10 +24,14 @@ router.post('/users/createUser', async (req, res) => {
     }
 })
 
-// Read user
+// Read user(Login in app)
 router.get('/users/me', auth, async (req, res) => {
     try{
+        // const io = req.app.get('socketio');
         res.send(req.user)
+        // io.on('login_socket', socket => {
+        //     io.emit('new_user', req.user.username)
+        // })
     } catch(err){
         res.status(400).send({err: err.message})
     }
@@ -54,8 +66,10 @@ router.patch('/users/me', auth, async (req, res) => {
 
 // Delete user
 router.delete('/users/me', auth,  async (req, res) => {
+    const chat = Chats.findOne({username: req.user.username})
     try{
         await req.user.remove()
+        await chat.remove()
         res.send(req.user)
     } catch (err){
         res.status(400).send({err})
