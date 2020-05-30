@@ -27,11 +27,7 @@ router.post('/users/createUser', async (req, res) => {
 // Read user(Login in app)
 router.get('/users/me', auth, async (req, res) => {
     try{
-        // const io = req.app.get('socketio');
         res.send(req.user)
-        // io.on('login_socket', socket => {
-        //     io.emit('new_user', req.user.username)
-        // })
     } catch(err){
         res.status(400).send({err: err.message})
     }
@@ -53,8 +49,6 @@ router.post('/users/searchUser', auth, async (req, res) => {
 // Update user
 router.patch('/users/me', auth, async (req, res) => {
     const updates = Object.keys(req.body)
-    // because the following doesnt allow middleware(that we use to hash passwords)
-    // const user = await User.findByIdAndUpdate(req.params.id, req.body, {new: true})
     try{
         updates.forEach((update) => req.user[update] = req.body[update])
         await req.user.save()

@@ -14,6 +14,8 @@ router.get('/users/friends', auth, async (req, res) => {
 })
 
 router.post('/sendRequest', auth, async (req, res) => {
+    const io = req.app.get('socketio');
+    const onlineUsers = req.app.get('onlineUsers');
     try{
         const requestedUser = await User.findOne({ username: req.body.username })
         // errors
@@ -37,13 +39,41 @@ router.post('/sendRequest', auth, async (req, res) => {
         req.user.reqSent.push(requestedUser._id)
         await req.user.save()
 
+        // socket
+        const reciever = onlineUsers.getUser(req.body.username)
+        if (reciever)
+            io.to(reciever).emit('request_received', req.user);
         res.send({message: 'Request sent!'})
     } catch (err){
         res.status(400).send({err: err.message})
     }
 })
 
+router.post('/removeFriend', auth, async (req, res) => {
+
+    try{
+        const friend = await User.findOne({username: req.body.username})
+
+        if(!friend)
+            return res.status(404).send('No user found')
+        friend.friends = friend.friends.filter(friend => {
+            return !req.user._id.equals(friend)
+        })
+        await friend.save()
+        
+        req.user.friends = req.user.friends.filter(fr => {
+            return !friend._id.equals(fr)
+        })
+        await req.user.save()
+        res.send({message: 'Friend removed'})
+    } catch (err){
+        res.status(400).send({err: err.message})
+    }
+})
+
 router.post('/acceptRequest', auth, async (req, res) => {
+    const io = req.app.get('socketio');
+    const onlineUsers = req.app.get('onlineUsers');
     try{
         const acceptedUser = await User.findOne({username: req.body.username})
         // handling request sender
@@ -75,10 +105,13 @@ router.post('/acceptRequest', auth, async (req, res) => {
         chatOfRequestAcceptor.chats[acceptedUser.username] = []
         chatOfRequestAcceptor.markModified('chats')
         await chatOfRequestAcceptor.save()
-        // sending response
+        // request Accept socket
+        const sender = onlineUsers.getUser(acceptedUser.username)
+        if (sender){
+            io.to(sender).emit('request_accepted', req.user);
+        }
         res.send({message: 'Request accepted!'})
     } catch (err){
-        console.log(err.message)
         res.status(400).send({err: err.message})
     }
 })
@@ -107,6 +140,16 @@ router.get('/users/pendingRequests', auth, async (req, res) => {
         const user = req.user
         await user.populate('reqReceived').execPopulate()
         res.send(user.reqReceived)
+    } catch (err){
+        res.status(400).send({err: err.message})
+    }
+})
+
+router.get('/users/sentRequests', auth, async (req, res) => {
+    try{
+        const user = req.user
+        await user.populate('reqSent').execPopulate()
+        res.send(user.reqSent)
     } catch (err){
         res.status(400).send({err: err.message})
     }

@@ -37,14 +37,18 @@ io.on('connection', (socket) => {
     try {
         socket.on('join', (username) => {
             onlineUsers.addUser(username, socket.id)
+            io.emit('user_joined', username)
         })
         socket.on('send_message', async (messageObject) => {
             const user = onlineUsers.getUser(messageObject.toUser)
             if(user){
                 await saveChats(messageObject)
-                io.to(user).emit('get_message', messageObject);  
+                io.to(user).emit('get_message', messageObject);
             } else{
-                io.to(user).emit('notOnlineError');
+                const sender = onlineUsers.getUser(messageObject.sender)
+                if (sender) {
+                    io.to(sender).emit('notOnlineError', messageObject.toUser);
+                }
             }
         })
         socket.on('status', (username, callback) => {
@@ -54,15 +58,12 @@ io.on('connection', (socket) => {
             else
                 callback(false)
         })
-        socket.on('new_connection', message => {
-          console.log('in new_connection')
-          io.emit('new_user', 'new user joined')  
-        })
         socket.on('exit', (username) => {
             onlineUsers.addUser(username)
+            io.emit('user_left', username)
         })
     } catch (err){
-        console.log(err.message)
+        
     }
 })
 

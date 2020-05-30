@@ -31,7 +31,7 @@ router.post('/users/me/avatar', [auth, upload.single('paramKey')], async (req, r
     req.user.avatar = req.file.buffer
     await req.user.save()
     res.send('Success')
-}, (error, req, res, next) => { //handle errors and send texts instead of html errors
+}, (error, req, res, next) => {
     res.status(400).send(error.message)
 })
 
