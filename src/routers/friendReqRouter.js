@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const User = require("../models/user");
-const Chats = require("../models/chats");
+// const Chats = require("../models/chats");
 const auth = require("../middleware/auth");
 const { getFriends } = require("../utils/friendsHelper");
 const {
@@ -91,25 +91,27 @@ router.post("/acceptRequest", auth, async (req, res) => {
     });
     req.user.friends.push(acceptedUser._id);
     await req.user.save();
-    // changing chat collection
-    const chatOfAcceptedUser = await Chats.findOne({
-      username: acceptedUser.username,
-    });
-    if (!chatOfAcceptedUser.chats) {
-      chatOfAcceptedUser.chats = {};
-    }
-    chatOfAcceptedUser.chats[req.user.username] = [];
-    chatOfAcceptedUser.markModified("chats");
-    await chatOfAcceptedUser.save();
-    const chatOfRequestAcceptor = await Chats.findOne({
-      username: req.user.username,
-    });
-    if (!chatOfRequestAcceptor.chats) {
-      chatOfRequestAcceptor.chats = {};
-    }
-    chatOfRequestAcceptor.chats[acceptedUser.username] = [];
-    chatOfRequestAcceptor.markModified("chats");
-    await chatOfRequestAcceptor.save();
+
+    // // changing chat collection
+    // const chatOfAcceptedUser = await Chats.findOne({
+    //   username: acceptedUser.username,
+    // });
+    // if (!chatOfAcceptedUser.chats) {
+    //   chatOfAcceptedUser.chats = {};
+    // }
+    // chatOfAcceptedUser.chats[req.user.username] = [];
+    // chatOfAcceptedUser.markModified("chats");
+    // await chatOfAcceptedUser.save();
+    // const chatOfRequestAcceptor = await Chats.findOne({
+    //   username: req.user.username,
+    // });
+    // if (!chatOfRequestAcceptor.chats) {
+    //   chatOfRequestAcceptor.chats = {};
+    // }
+    // chatOfRequestAcceptor.chats[acceptedUser.username] = [];
+    // chatOfRequestAcceptor.markModified("chats");
+    // await chatOfRequestAcceptor.save();
+
     // request Accept socket
     const sender = onlineUsers.getUser(acceptedUser.username);
     if (sender) {

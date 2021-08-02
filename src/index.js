@@ -3,7 +3,7 @@ require("./db/mongoose");
 const basicRouter = require("./routers/basicRouter");
 const loggingRouter = require("./routers/loggingRouter");
 const friendReqRouter = require("./routers/friendReqRouter");
-const Chats = require("./models/chats");
+// const Chats = require("./models/chats");
 const http = require("http");
 const socketio = require("socket.io");
 const OnlineUsers = require("./utils/OnlineUsers");

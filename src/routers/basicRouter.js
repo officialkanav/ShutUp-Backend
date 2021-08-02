@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const User = require("../models/user");
-const Chats = require("../models/chats");
+// const Chats = require("../models/chats");
 const auth = require("../middleware/auth");
 const { getFriends } = require("../utils/friendsHelper");
 const {
@@ -11,13 +11,13 @@ const {
 // Create user
 router.post("/users/createUser", async (req, res) => {
   const user = new User(req.body);
-  const chats = new Chats({
-    username: req.body.username,
-    chats: {},
-  });
+  //   const chats = new Chats({
+  //     username: req.body.username,
+  //     chats: {},
+  //   });
   try {
     await user.save();
-    await chats.save();
+    // await chats.save();
     const token = await user.generateAuthToken();
     const onlineUsers = req.app.get("onlineUsers");
     onlineUsers.addUser(req.body.username);
@@ -74,7 +74,7 @@ router.patch("/users/me", auth, async (req, res) => {
 
 // Delete user
 router.delete("/users/me", auth, async (req, res) => {
-  const chat = Chats.findOne({ username: req.user.username });
+  //   const chat = Chats.findOne({ username: req.user.username });
   try {
     await req.user.remove();
     await chat.remove();
